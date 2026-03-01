@@ -22,9 +22,17 @@ This project provides a script to transform a "Minimal Install" of Fedora into a
 2.  **Internet Connection**: Required to download all components.
 3.  **Sudo Privileges**: The script must be run as root.
 
-## How to Use
+## Fast Install (Recommended for Fedora Minimal)
 
-1.  **Clone this repository** (or download the script):
+If you just finished a minimal install and don't have `git`, you can download and run the script directly:
+
+```bash
+wget https://raw.githubusercontent.com/silvaivanilto/Fedora-KDE-Minimal-Install-Guide/master/fedora-plasma-minimal.sh
+chmod +x fedora-plasma-minimal.sh
+sudo ./fedora-plasma-minimal.sh
+```
+
+## How to Use (Git Clone)
     ```bash
     git clone https://github.com/silvaivanilto/Fedora-KDE-Minimal-Install-Guide.git
     cd Fedora-KDE-Minimal-Install-Guide
