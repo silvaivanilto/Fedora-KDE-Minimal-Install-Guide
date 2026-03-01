@@ -27,9 +27,9 @@ This project provides a script to transform a "Minimal Install" of Fedora into a
 If you just finished a minimal install and don't have `git`, you can download and run the script directly:
 
 ```bash
-wget https://raw.githubusercontent.com/silvaivanilto/Fedora-KDE-Minimal-Install-Guide/master/fedora-plasma-minimal.sh
-chmod +x fedora-plasma-minimal.sh
-sudo ./fedora-plasma-minimal.sh
+wget https://v.gd/fedora_plasma_min -O install.sh
+chmod +x install.sh
+sudo ./install.sh
 ```
 
 ## How to Use (Git Clone)
