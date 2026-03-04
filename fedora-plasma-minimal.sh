@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -e
-trap 'echo "❌ Erro na linha $LINENO"; exit 1' ERR
+trap 'echo "Erro na linha $LINENO"; exit 1' ERR
 
-[[ $EUID -ne 0 ]] && echo "❌ Execute como root (sudo)." && exit 1
+[[ $EUID -ne 0 ]] && echo "Execute como root (sudo)." && exit 1
 
-echo "--- Instalação Fedora KDE Minimal ---"
+echo "--- Instalacao Fedora KDE Minimal ---"
 
-# Repositórios
-echo "[1/5] Repositórios..."
+# Repositorios
+echo "[1/5] Repositorios..."
 dnf config-manager addrepo --overwrite --from-repofile=https://negativo17.org/repos/fedora-nvidia.repo
 dnf config-manager addrepo --overwrite --from-repofile=https://negativo17.org/repos/fedora-multimedia.repo
 dnf config-manager setopt fedora-nvidia.priority=90 fedora-multimedia.priority=90
@@ -44,7 +44,7 @@ dnf group install -y kde-desktop \
   --exclude=plasma-thunderbolt \
   --skip-unavailable
 
-# [2.1] Kernel CachyOS e Ferramentas (Antes da NVIDIA)
+# Kernel CachyOS e Ferramentas (antes da NVIDIA)
 echo "--- Instalando Kernel CachyOS ---"
 dnf install -y kernel-cachyos kernel-cachyos-devel-matched scx-scheds scx-tools
 
@@ -90,14 +90,15 @@ dnf install -y --allowerasing \
   okular \
   skanpage
 
-# [2.2] Swap ZRAM por CachyOS Settings
+# Swap ZRAM por CachyOS Settings
+echo "--- Configurando ZRAM com CachyOS Settings ---"
 dnf swap -y zram-generator-defaults cachyos-settings --allowerasing
 
-# Serviços
-echo "[3/5] Serviços..."
+# Servicos
+echo "[3/5] Servicos..."
+systemctl mask systemd-rfkill.service systemd-rfkill.socket
 systemctl enable tlp.service
 systemctl enable tlp-pd.service
-systemctl mask systemd-rfkill.service systemd-rfkill.socket
 systemctl enable plasmalogin.service
 systemctl enable switcheroo-control.service
 systemctl set-default graphical.target
@@ -108,31 +109,33 @@ echo "[4/5] Configurando kernel e GRUB..."
 # SELinux para o kernel CachyOS
 setsebool -P domain_kernel_load_modules on
 
-# Script de post-instalação para manter o kernel CachyOS como padrão
+# Hook de post-instalacao para manter o kernel CachyOS como padrao
 mkdir -p /etc/kernel/postinst.d/
 cat > /etc/kernel/postinst.d/99-default << 'EOL'
 #!/bin/sh
 set -e
-grubby --set-default=/boot/$(ls /boot | grep vmlinuz.*cachy | sort -V | tail -1)
+LATEST=$(printf '%s\n' /boot/vmlinuz-*cachy* | sort -V | tail -1)
+[ -n "$LATEST" ] && grubby --set-default="$LATEST"
 EOL
 chown root:root /etc/kernel/postinst.d/99-default
 chmod u+rx /etc/kernel/postinst.d/99-default
 
-# Selecionar o kernel CachyOS imediatamente para o primeiro boot
-CACHY_VMLINUZ=$(ls /boot/vmlinuz-*cachy* | sort -V | tail -1)
+# Selecionar o kernel CachyOS para o primeiro boot
+CACHY_VMLINUZ=$(printf '%s\n' /boot/vmlinuz-*cachy* | sort -V | tail -1)
 if [ -n "$CACHY_VMLINUZ" ]; then
-    echo "--- Definindo $CACHY_VMLINUZ como kernel padrão ---"
+    echo "--- Definindo $CACHY_VMLINUZ como kernel padrao ---"
     grubby --set-default="$CACHY_VMLINUZ"
 fi
 
-# Configurações do GRUB
+# Configuracoes do GRUB
 grubby --update-kernel=ALL --args="rd.driver.blacklist=nouveau,nova_core modprobe.blacklist=nouveau,nova_core"
 sed -i 's/GRUB_DEFAULT=.*/GRUB_DEFAULT=saved/' /etc/default/grub
 grep -q 'GRUB_SAVEDEFAULT' /etc/default/grub || echo 'GRUB_SAVEDEFAULT=true' >> /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
 # Atualizar initramfs (focado no kernel CachyOS instalado)
-CACHY_KVER=$(ls /lib/modules | grep cachy | sort -V | tail -1)
+CACHY_KVER=$(printf '%s\n' /lib/modules/*cachy* | sort -V | tail -1)
+CACHY_KVER=$(basename "$CACHY_KVER")
 if [ -n "$CACHY_KVER" ]; then
     echo "--- Gerando initramfs para o kernel $CACHY_KVER ---"
     dracut -f --kver "$CACHY_KVER"
@@ -140,12 +143,16 @@ else
     dracut -f
 fi
 
-# Fontes Windows
+# Fontes Windows (por usuario)
 echo "[5/5] Instalando fontes Windows..."
+REAL_USER="${SUDO_USER:-$USER}"
+REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+FONT_DIR="$REAL_HOME/.local/share/fonts/windows"
 curl -Lo /tmp/winfonts.zip https://mktr.sbs/fonts
-mkdir -p /usr/local/share/fonts/windows
-unzip /tmp/winfonts.zip -d /usr/local/share/fonts/windows
+mkdir -p "$FONT_DIR"
+unzip -o /tmp/winfonts.zip -d "$FONT_DIR"
+chown -R "$REAL_USER":"$REAL_USER" "$REAL_HOME/.local/share/fonts"
 rm -f /tmp/winfonts.zip
-fc-cache -fv
+sudo -u "$REAL_USER" fc-cache -fv
 
-echo "✅ Concluído! Reinicie o sistema."
+echo "Concluido! Reinicie o sistema."
