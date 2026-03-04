@@ -14,7 +14,7 @@ dnf config-manager setopt fedora-nvidia.priority=90 fedora-multimedia.priority=9
 dnf install -y fedora-workstation-repositories
 dnf config-manager setopt google-chrome.enabled=1
 dnf copr enable -y bieszczaders/kernel-cachyos
-dnf copr enable -y bieszczaders/kernel-cachyos-add-ons
+dnf copr enable -y bieszczaders/kernel-cachyos-addons
 dnf install -y https://repo.linrunner.de/fedora/tlp/repos/releases/tlp-release.fc$(rpm -E %fedora).noarch.rpm
 dnf install -y https://download.onlyoffice.com/repo/centos/main/noarch/onlyoffice-repo.noarch.rpm
 
