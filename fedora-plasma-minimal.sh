@@ -29,19 +29,19 @@ EOL
 # KDE Plasma (minimalista)
 echo "[2/5] Pacotes..."
 dnf group install -y kde-desktop \
-  --exclude=sddm* \
-  --exclude=plasma-welcome \
-  --exclude=plasma-drkonqi \
-  --exclude=kdeplasma-addons \
-  --exclude=kdebugsettings \
-  --exclude=akonadi* \
   --exclude=abrt* \
-  --exclude=toolbox \
+  --exclude=akonadi* \
+  --exclude=audiocd-kio \
   --exclude=firewall-config \
   --exclude=intel* \
-  --exclude=tuned* \
-  --exclude=audiocd-kio \
+  --exclude=kdebugsettings \
+  --exclude=kdeplasma-addons \
+  --exclude=plasma-drkonqi \
   --exclude=plasma-thunderbolt \
+  --exclude=plasma-welcome \
+  --exclude=sddm* \
+  --exclude=toolbox \
+  --exclude=tuned* \
   --skip-unavailable
 
 # Kernel CachyOS e Ferramentas (antes da NVIDIA)
@@ -52,9 +52,10 @@ dnf install -y kernel-cachyos kernel-cachyos-devel-matched scx-scheds scx-tools
 dnf install -y --allowerasing \
   plasma-login-manager \
   kcm-plasmalogin \
+  switcheroo-control \
   nvidia-driver \
-  nvidia-driver-libs \
   nvidia-driver-cuda-libs \
+  nvidia-driver-libs \
   nvidia-gpu-firmware \
   nvidia-modprobe \
   nvidia-persistenced \
@@ -62,33 +63,32 @@ dnf install -y --allowerasing \
   libnvidia-cfg \
   libnvidia-gpucomp \
   libnvidia-ml \
-  tlp \
-  tlp-rdw \
-  tlp-pd \
-  ffmpeg \
-  distrobox \
-  onlyoffice-desktopeditors \
-  google-chrome-stable \
-  antigravity \
-  git \
-  fzf \
-  fastfetch \
-  unrar \
-  unzip \
-  curl \
-  switcheroo-control \
   mesa-dri-drivers \
-  mesa-vulkan-drivers \
   mesa-va-drivers \
   mesa-vdpau-drivers \
+  mesa-vulkan-drivers \
   libva-utils \
+  tlp \
+  tlp-pd \
+  tlp-rdw \
+  ffmpeg \
+  antigravity \
+  distrobox \
+  google-chrome-stable \
+  onlyoffice-desktopeditors \
   elisa \
   kalk \
   koko \
   marknotes \
   merkuro \
   okular \
-  skanpage
+  skanpage \
+  curl \
+  fastfetch \
+  fzf \
+  git \
+  unrar \
+  unzip
 
 # Swap ZRAM por CachyOS Settings
 echo "--- Configurando ZRAM com CachyOS Settings ---"
