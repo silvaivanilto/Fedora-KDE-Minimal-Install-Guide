@@ -4,20 +4,31 @@ trap 'echo "Erro na linha $LINENO"; exit 1' ERR
 
 [[ $EUID -ne 0 ]] && echo "Execute como root (sudo)." && exit 1
 
-echo "--- Instalacao Fedora KDE Minimal ---"
+echo "--- Fedora KDE Plasma Minimal ---"
 
 # Repositorios
 echo "[1/5] Repositorios..."
+
+# Negativo17: drivers NVIDIA e multimedia
 dnf config-manager addrepo --overwrite --from-repofile=https://negativo17.org/repos/fedora-nvidia.repo
 dnf config-manager addrepo --overwrite --from-repofile=https://negativo17.org/repos/fedora-multimedia.repo
 dnf config-manager setopt fedora-nvidia.priority=90 fedora-multimedia.priority=90
+
+# Google Chrome
 dnf install -y fedora-workstation-repositories
 dnf config-manager setopt google-chrome.enabled=1
+
+# Kernel CachyOS (COPR)
 dnf copr enable -y bieszczaders/kernel-cachyos
 dnf copr enable -y bieszczaders/kernel-cachyos-addons
-dnf install -y https://repo.linrunner.de/fedora/tlp/repos/releases/tlp-release.fc$(rpm -E %fedora).noarch.rpm
+
+# TLP: gerenciamento de energia
+dnf install -y "https://repo.linrunner.de/fedora/tlp/repos/releases/tlp-release.fc$(rpm -E %fedora).noarch.rpm"
+
+# OnlyOffice
 dnf install -y https://download.onlyoffice.com/repo/centos/main/noarch/onlyoffice-repo.noarch.rpm
 
+# Antigravity
 cat > /etc/yum.repos.d/antigravity.repo << 'EOL'
 [antigravity-rpm]
 name=Antigravity RPM Repository
@@ -28,67 +39,60 @@ EOL
 
 # KDE Plasma (minimalista)
 echo "[2/5] Pacotes..."
-dnf group install -y kde-desktop \
-  --exclude=abrt* \
-  --exclude=akonadi* \
-  --exclude=audiocd-kio \
-  --exclude=firewall-config \
-  --exclude=intel* \
-  --exclude=kdebugsettings \
-  --exclude=kdeplasma-addons \
-  --exclude=plasma-drkonqi \
-  --exclude=plasma-thunderbolt \
-  --exclude=plasma-welcome \
-  --exclude=sddm* \
-  --exclude=toolbox \
-  --exclude=tuned* \
-  --skip-unavailable
+
+KDE_EXCLUDE_PKGS=(
+  abrt*
+  akonadi*
+  audiocd-kio
+  firewall-config
+  intel*
+  kdebugsettings
+  kdeplasma-addons
+  plasma-drkonqi
+  plasma-thunderbolt
+  plasma-welcome
+  power-profiles-daemon
+  sddm*
+  toolbox
+  tuned*
+)
+
+# shellcheck disable=SC2046
+dnf group install -y kde-desktop $(printf -- '--exclude=%s ' "${KDE_EXCLUDE_PKGS[@]}") --skip-unavailable
 
 # Kernel CachyOS e Ferramentas (antes da NVIDIA)
 echo "--- Instalando Kernel CachyOS ---"
 dnf install -y kernel-cachyos kernel-cachyos-devel-matched scx-scheds scx-tools
 
-# Pacotes complementares (--allowerasing: ffmpeg substitui ffmpeg-free)
-dnf install -y --allowerasing \
-  plasma-login-manager \
-  kcm-plasmalogin \
-  switcheroo-control \
-  nvidia-driver \
-  nvidia-driver-cuda-libs \
-  nvidia-driver-libs \
-  nvidia-gpu-firmware \
-  nvidia-modprobe \
-  nvidia-persistenced \
-  nvidia-settings \
-  libnvidia-cfg \
-  libnvidia-gpucomp \
-  libnvidia-ml \
-  mesa-dri-drivers \
-  mesa-va-drivers \
-  mesa-vdpau-drivers \
-  mesa-vulkan-drivers \
-  libva-utils \
-  tlp \
-  tlp-pd \
-  tlp-rdw \
-  ffmpeg \
-  antigravity \
-  distrobox \
-  google-chrome-stable \
-  onlyoffice-desktopeditors \
-  elisa \
-  kalk \
-  koko \
-  marknotes \
-  merkuro \
-  okular \
-  skanpage \
-  curl \
-  fastfetch \
-  fzf \
-  git \
-  unrar \
-  unzip
+# KDE: login manager
+dnf install -y --allowerasing plasma-login-manager kcm-plasmalogin
+
+# Drivers NVIDIA
+dnf install -y --allowerasing nvidia-driver nvidia-driver-cuda-libs nvidia-driver-libs nvidia-gpu-firmware nvidia-modprobe nvidia-persistenced nvidia-settings libnvidia-cfg libnvidia-gpucomp libnvidia-ml
+
+# Mesa (AMD) e codecs: VA-API, VDPAU, Vulkan
+dnf install -y --allowerasing mesa-dri-drivers mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers libva-utils ffmpeg switcheroo-control
+
+# TLP: gerenciamento de energia
+dnf install -y tlp tlp-pd tlp-rdw
+
+# Aplicativos KDE
+dnf install -y elisa-player kalk koko marknote merkuro okular skanpage
+
+# Navegador
+dnf install -y google-chrome-stable
+
+# Office
+dnf install -y onlyoffice-desktopeditors
+
+# IDE
+dnf install -y antigravity
+
+# Containers
+dnf install -y distrobox
+
+# Ferramentas CLI
+dnf install -y curl fastfetch fzf git unrar unzip
 
 # Swap ZRAM por CachyOS Settings
 echo "--- Configurando ZRAM com CachyOS Settings ---"
@@ -106,16 +110,12 @@ systemctl set-default graphical.target
 # Kernel e Boot
 echo "[4/5] Configurando kernel e GRUB..."
 
-# SELinux para o kernel CachyOS
-setsebool -P domain_kernel_load_modules on
-
 # Hook de post-instalacao para manter o kernel CachyOS como padrao
 mkdir -p /etc/kernel/postinst.d/
 cat > /etc/kernel/postinst.d/99-default << 'EOL'
 #!/bin/sh
 set -e
-LATEST=$(printf '%s\n' /boot/vmlinuz-*cachy* | sort -V | tail -1)
-[ -n "$LATEST" ] && grubby --set-default="$LATEST"
+grubby --set-default=/boot/$(ls /boot | grep vmlinuz.*cachy | sort -V | tail -1)
 EOL
 chown root:root /etc/kernel/postinst.d/99-default
 chmod u+rx /etc/kernel/postinst.d/99-default

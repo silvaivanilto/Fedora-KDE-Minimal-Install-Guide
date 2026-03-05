@@ -9,10 +9,10 @@ This project provides a script to transform a "Minimal Install" of Fedora into a
 ## Features
 
 - **Kernel CachyOS**: High-performance kernel with `scx` schedulers and custom optimizations.
-- **KDE Plasma Minimal**: Installed with specific exclusions (SDDM, Akonadi, Thunderbolt, etc.) to remove unnecessary pre-installed apps.
+- **KDE Plasma Minimal**: Installed with specific exclusions to remove unnecessary pre-installed apps.
 - **Modern Power Management**: Uses `TLP` optimized for laptops.
 - **NVIDIA Drivers**: Automated setup using the [Negativo17](https://negativo17.org/) repositories, installed after CachyOS kernel for maximum stability.
-- **AMD/Intel GPU Support**: Mesa drivers with full codec support (VA-API/VDPAU) from Negativo17.
+- **AMD GPU Support**: Mesa drivers with full codec support (VA-API/VDPAU) from Negativo17.
 - **Hybrid GPU**: `switcheroo-control` for choosing between integrated and dedicated GPU.
 - **Multimedia**: `ffmpeg` (Negativo17) and KDE apps like Elisa and Koko.
 - **Applications**: Google Chrome, OnlyOffice, Antigravity, Kalk, Marknotes, Merkuro, Okular, Skanpage.
