@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 trap 'echo "Erro na linha $LINENO"; exit 1' ERR
 
 [[ $EUID -ne 0 ]] && echo "Execute como root (sudo)." && exit 1
@@ -7,7 +7,7 @@ trap 'echo "Erro na linha $LINENO"; exit 1' ERR
 echo "--- Fedora KDE Plasma Minimal ---"
 
 # Repositorios
-echo "[1/5] Repositorios..."
+echo "[1/4] Repositorios..."
 
 # Negativo17: drivers NVIDIA e multimedia
 dnf config-manager addrepo --overwrite --from-repofile=https://negativo17.org/repos/fedora-nvidia.repo
@@ -37,8 +37,11 @@ enabled=1
 gpgcheck=0
 EOL
 
+# Docker
+dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+
 # KDE Plasma (minimalista)
-echo "[2/5] Pacotes..."
+echo "[2/4] Pacotes..."
 
 KDE_EXCLUDE_PKGS=(
   abrt*
@@ -47,6 +50,7 @@ KDE_EXCLUDE_PKGS=(
   firewall-config
   intel*
   kdebugsettings
+  khelpcenter
   kdeplasma-addons
   plasma-drkonqi
   plasma-thunderbolt
@@ -68,16 +72,16 @@ dnf install -y kernel-cachyos kernel-cachyos-devel-matched scx-scheds scx-tools
 dnf install -y --allowerasing plasma-login-manager kcm-plasmalogin
 
 # Drivers NVIDIA
-dnf install -y --allowerasing nvidia-driver nvidia-driver-cuda-libs nvidia-driver-libs nvidia-gpu-firmware nvidia-modprobe nvidia-persistenced nvidia-settings libnvidia-cfg libnvidia-gpucomp libnvidia-ml
+dnf install -y --allowerasing nvidia-driver nvidia-gpu-firmware nvidia-settings
 
 # Mesa (AMD) e codecs: VA-API, VDPAU, Vulkan
-dnf install -y --allowerasing mesa-dri-drivers mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers libva-utils ffmpeg switcheroo-control
+dnf install -y --allowerasing mesa-dri-drivers mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers ffmpeg
 
 # TLP: gerenciamento de energia
 dnf install -y tlp tlp-pd tlp-rdw
 
 # Aplicativos KDE
-dnf install -y elisa-player kalk koko marknote merkuro okular skanpage
+dnf install -y elisa-player kalk koko marknote merkuro okular plasma-firewall skanpage
 
 # Navegador
 dnf install -y google-chrome-stable
@@ -89,33 +93,45 @@ dnf install -y onlyoffice-desktopeditors
 dnf install -y antigravity
 
 # Containers
-dnf install -y distrobox
+dnf install -y docker-ce docker-ce-cli containerd.io distrobox
 
 # Ferramentas CLI
-dnf install -y curl fastfetch fzf git unrar unzip
+dnf install -y bash-color-prompt curl fastfetch fzf git unrar unzip switcheroo-control libva-utils
 
 # Swap ZRAM por CachyOS Settings
 echo "--- Configurando ZRAM com CachyOS Settings ---"
 dnf swap -y zram-generator-defaults cachyos-settings --allowerasing
 
 # Servicos
-echo "[3/5] Servicos..."
+echo "[3/4] Servicos..."
+
+# Desativa rfkill (conflita com TLP)
 systemctl mask systemd-rfkill.service systemd-rfkill.socket
+# Gerenciamento de energia (bateria)
 systemctl enable tlp.service
+# TLP: deteccao de dock/AC
 systemctl enable tlp-pd.service
+# Login manager do KDE Plasma
 systemctl enable plasmalogin.service
+# Switching GPU hibrida AMD/NVIDIA
 systemctl enable switcheroo-control.service
+# Runtime de containers
+systemctl enable docker.service
+# Boot direto na interface grafica
 systemctl set-default graphical.target
 
+# Adicionar usuario ao grupo docker (sem precisar sudo)
+usermod -aG docker "${SUDO_USER:?Execute com sudo}"
+
 # Kernel e Boot
-echo "[4/5] Configurando kernel e GRUB..."
+echo "[4/4] Configurando kernel e GRUB..."
 
 # Hook de post-instalacao para manter o kernel CachyOS como padrao
 mkdir -p /etc/kernel/postinst.d/
 cat > /etc/kernel/postinst.d/99-default << 'EOL'
 #!/bin/sh
 set -e
-grubby --set-default=/boot/$(ls /boot | grep vmlinuz.*cachy | sort -V | tail -1)
+grubby --set-default="$(printf '%s\n' /boot/vmlinuz-*cachy* | sort -V | tail -1)"
 EOL
 chown root:root /etc/kernel/postinst.d/99-default
 chmod u+rx /etc/kernel/postinst.d/99-default
@@ -142,17 +158,5 @@ if [ -n "$CACHY_KVER" ]; then
 else
     dracut -f
 fi
-
-# Fontes Windows (por usuario)
-echo "[5/5] Instalando fontes Windows..."
-REAL_USER="${SUDO_USER:-$USER}"
-REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
-FONT_DIR="$REAL_HOME/.local/share/fonts/windows"
-curl -Lo /tmp/winfonts.zip https://mktr.sbs/fonts
-mkdir -p "$FONT_DIR"
-unzip -o /tmp/winfonts.zip -d "$FONT_DIR"
-chown -R "$REAL_USER":"$REAL_USER" "$REAL_HOME/.local/share/fonts"
-rm -f /tmp/winfonts.zip
-sudo -u "$REAL_USER" fc-cache -fv
 
 echo "Concluido! Reinicie o sistema."
