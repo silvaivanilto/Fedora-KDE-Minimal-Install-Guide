@@ -1,162 +1,151 @@
 #!/usr/bin/env bash
+
+# Verificação de sudo e Integridade de execução
 set -euo pipefail
-trap 'echo "Erro na linha $LINENO"; exit 1' ERR
+trap 'echo "Erro na linha $LINENO em: $BASH_COMMAND"; exit 1' ERR
+[[ $EUID -ne 0 ]] && echo "Execute com: sudo $0" && exit 1
 
-[[ $EUID -ne 0 ]] && echo "Execute como root (sudo)." && exit 1
+echo "=== Instalação do KDE Plasma Minimal — Fedora ==="
 
-echo "--- Fedora KDE Plasma Minimal ---"
+# ------------------------------------------------------------------------------
+# [1/5] Inicialização: Fontes de Software e Repositórios
+# ------------------------------------------------------------------------------
+echo "[1/5] Preparando fontes de software e repositórios..."
 
-# Repositorios
-echo "[1/4] Repositorios..."
+dnf install -y dnf-plugins-core fedora-workstation-repositories grubby pciutils
 
-# Negativo17: drivers NVIDIA e multimedia
+# Repositórios Negativo17 (Drivers e Multimídia)
 dnf config-manager addrepo --overwrite --from-repofile=https://negativo17.org/repos/fedora-nvidia.repo
 dnf config-manager addrepo --overwrite --from-repofile=https://negativo17.org/repos/fedora-multimedia.repo
 dnf config-manager setopt fedora-nvidia.priority=90 fedora-multimedia.priority=90
-
-# Google Chrome
-dnf install -y fedora-workstation-repositories
-dnf config-manager setopt google-chrome.enabled=1
 
 # Kernel CachyOS (COPR)
 dnf copr enable -y bieszczaders/kernel-cachyos
 dnf copr enable -y bieszczaders/kernel-cachyos-addons
 
-# TLP: gerenciamento de energia
-dnf install -y "https://repo.linrunner.de/fedora/tlp/repos/releases/tlp-release.fc$(rpm -E %fedora).noarch.rpm"
+# Repositórios RPM Fusion (Free e Nonfree)
+dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
-# OnlyOffice
-dnf install -y https://download.onlyoffice.com/repo/centos/main/noarch/onlyoffice-repo.noarch.rpm
-
-# Antigravity
-cat > /etc/yum.repos.d/antigravity.repo << 'EOL'
+# Repositório Antigravity
+cat > /etc/yum.repos.d/antigravity.repo << 'EOF'
 [antigravity-rpm]
 name=Antigravity RPM Repository
 baseurl=https://us-central1-yum.pkg.dev/projects/antigravity-auto-updater-dev/antigravity-rpm
 enabled=1
 gpgcheck=0
-EOL
+EOF
 
-# Docker
-dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+# Repositório do Google Chrome
+dnf config-manager setopt google-chrome.enabled=1
 
-# KDE Plasma (minimalista)
-echo "[2/4] Pacotes..."
 
-KDE_EXCLUDE_PKGS=(
-  abrt*
-  akonadi*
-  audiocd-kio
-  firewall-config
-  intel*
-  kdebugsettings
-  khelpcenter
-  kdeplasma-addons
-  plasma-drkonqi
-  plasma-thunderbolt
-  plasma-welcome
-  power-profiles-daemon
-  sddm*
-  toolbox
-  tuned*
-)
+# ------------------------------------------------------------------------------
+# [2/5] Atualização: Upgrade de Pacotes do Sistema
+# ------------------------------------------------------------------------------
+echo "[2/5] Atualizando os pacotes do sistema..."
 
-# shellcheck disable=SC2046
-dnf group install -y kde-desktop $(printf -- '--exclude=%s ' "${KDE_EXCLUDE_PKGS[@]}") --skip-unavailable
+dnf makecache --refresh
+dnf upgrade -y
 
-# Kernel CachyOS e Ferramentas (antes da NVIDIA)
-echo "--- Instalando Kernel CachyOS ---"
-dnf install -y kernel-cachyos kernel-cachyos-devel-matched scx-scheds scx-tools
 
-# KDE: login manager
-dnf install -y --allowerasing plasma-login-manager kcm-plasmalogin
+# [3/5] Instalação: Ambiente Desktop, Kernel e Drivers Híbridos
+# ------------------------------------------------------------------------------
+echo "[3/5] Instalando ambiente desktop, kernel e drivers..."
 
-# Drivers NVIDIA
-dnf install -y --allowerasing nvidia-driver nvidia-gpu-firmware nvidia-settings
+# Configuração de pacotes excluídos para um KDE Minimal
+KDE_EXCLUDE=("abrt*" "audiocd-kio" "firewall-config" "intel*" "kdebugsettings" "khelpcenter" "kdeplasma-addons" "plasma-drkonqi" "plasma-thunderbolt" "plasma-welcome")
 
-# Mesa (AMD) e codecs: VA-API, VDPAU, Vulkan
-dnf install -y --allowerasing mesa-dri-drivers mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers ffmpeg
+# Instalação do grupo KDE com exclusões
+dnf group install -y kde-desktop $(printf -- '--exclude=%s ' "${KDE_EXCLUDE[@]}") --skip-unavailable
 
-# TLP: gerenciamento de energia
-dnf install -y tlp tlp-pd tlp-rdw
+# Kernel CachyOS e ferramentas de performance
+dnf install -y kernel-cachyos kernel-cachyos-devel-matched scx-scheds scx-tools ananicy-cpp
 
-# Aplicativos KDE
-dnf install -y elisa-player kalk koko marknote merkuro okular plasma-firewall skanpage
+# Drivers de Vídeo e Firmwares (Híbrido AMD + NVIDIA)
+dnf install -y --allowerasing nvidia-driver nvidia-gpu-firmware nvidia-settings nvidia-vaapi-driver amd-gpu-firmware --skip-unavailable
 
-# Navegador
-dnf install -y google-chrome-stable
+dnf install -y --allowerasing mesa-dri-drivers mesa-vulkan-drivers ffmpeg --skip-unavailable
 
-# Office
-dnf install -y onlyoffice-desktopeditors
+# Aplicativos Core e Utilitários
+dnf install -y elisa-player kalk koko marknote merkuro okular plasma-firewall skanpage kdepim-runtime google-chrome-stable ayugram-desktop antigravity curl fastfetch fzf git unrar unzip switcheroo-control libva-utils fwupd podman-docker
 
-# IDE
-dnf install -y antigravity
+# Instalação de fontes Microsoft (Core Fonts)
+dnf install -y cabextract mkfontscale xset
+dnf install -y https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
 
-# Containers
-dnf install -y docker-ce docker-ce-cli containerd.io distrobox
+# Suíte de Produtividade (LibreOffice)
+dnf group install -y libreoffice --skip-unavailable
 
-# Ferramentas CLI
-dnf install -y bash-color-prompt curl fastfetch fzf git unrar unzip switcheroo-control libva-utils
+# Repositório de Aplicativos Flatpak (Flathub)
+flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-# Swap ZRAM por CachyOS Settings
-echo "--- Configurando ZRAM com CachyOS Settings ---"
+
+# ------------------------------------------------------------------------------
+# [4/5] Otimização: Ajustes de Sistema e Performance
+# ------------------------------------------------------------------------------
+echo "[4/5] Aplicando ajustes de sistema e performance..."
+
+# Troca de zRAM por configurações de performance CachyOS
 dnf swap -y zram-generator-defaults cachyos-settings --allowerasing
 
-# Servicos
-echo "[3/4] Servicos..."
+# Configuração de Gerenciamento de Energia NVIDIA
+cat > /etc/modprobe.d/nvidia.conf << 'EOF'
+options nvidia NVreg_DynamicPowerManagement=0x02
+options nvidia NVreg_PreserveVideoMemoryAllocations=1
+EOF
 
-# Desativa rfkill (conflita com TLP)
-systemctl mask systemd-rfkill.service systemd-rfkill.socket
-# Gerenciamento de energia (bateria)
-systemctl enable tlp.service
-# TLP: deteccao de dock/AC
-systemctl enable tlp-pd.service
-# Login manager do KDE Plasma
+# Configuração do Loader SCX
+cat > /etc/scx_loader.toml << 'EOF'
+# Configuração padrão de scheduler BPF
+default_sched = "scx_bpfland"
+default_mode = "Auto"
+EOF
+
+
+# ------------------------------------------------------------------------------
+# [5/5] Finalização: Serviços e Configuração de Boot
+# ------------------------------------------------------------------------------
+echo "[5/5] Finalizando serviços e configuração de boot..."
+
+# Ativa o login da interface gráfica KDE
 systemctl enable plasmalogin.service
-# Switching GPU hibrida AMD/NVIDIA
+
+# Loader de schedulers BPF (CachyOS)
+systemctl enable scx_loader.service
+
+# Priorizador de processos para performance
+systemctl enable ananicy-cpp.service
+
+# Controle de GPUs híbridas
 systemctl enable switcheroo-control.service
-# Runtime de containers
-systemctl enable docker.service
-# Boot direto na interface grafica
+
+# Define a interface gráfica como padrão no boot
 systemctl set-default graphical.target
 
-# Adicionar usuario ao grupo docker (sem precisar sudo)
-usermod -aG docker "${SUDO_USER:?Execute com sudo}"
-
-# Kernel e Boot
-echo "[4/4] Configurando kernel e GRUB..."
-
-# Hook de post-instalacao para manter o kernel CachyOS como padrao
-mkdir -p /etc/kernel/postinst.d/
-cat > /etc/kernel/postinst.d/99-default << 'EOL'
+# Hook de Kernel para manter o CachyOS como padrão
+mkdir -p /etc/kernel/postinst.d
+cat > /etc/kernel/postinst.d/99-default << 'EOF'
 #!/bin/sh
 set -e
-grubby --set-default="$(printf '%s\n' /boot/vmlinuz-*cachy* | sort -V | tail -1)"
-EOL
+grubby --set-default=/boot/$(ls /boot | grep vmlinuz.*cachy | sort -V | tail -1)
+EOF
+
 chown root:root /etc/kernel/postinst.d/99-default
 chmod u+rx /etc/kernel/postinst.d/99-default
 
-# Selecionar o kernel CachyOS para o primeiro boot
-CACHY_VMLINUZ=$(printf '%s\n' /boot/vmlinuz-*cachy* | sort -V | tail -1)
-if [ -n "$CACHY_VMLINUZ" ]; then
-    echo "--- Definindo $CACHY_VMLINUZ como kernel padrao ---"
-    grubby --set-default="$CACHY_VMLINUZ"
-fi
+# Atualização de Parâmetros do Kernel e GRUB
+grubby --update-kernel=ALL --args="rd.driver.blacklist=nouveau,nova_core modprobe.blacklist=nouveau,nova_core nvidia-drm.modeset=1"
 
-# Configuracoes do GRUB
-grubby --update-kernel=ALL --args="rd.driver.blacklist=nouveau,nova_core modprobe.blacklist=nouveau,nova_core"
+# Remoção de kernels antigos (Mantém apenas o CachyOS)
+echo "Limpando kernels antigos do Fedora..."
+dnf remove -y kernel kernel-core kernel-modules kernel-devel --exclude="*cachyos*"
+
 sed -i 's/GRUB_DEFAULT=.*/GRUB_DEFAULT=saved/' /etc/default/grub
 grep -q 'GRUB_SAVEDEFAULT' /etc/default/grub || echo 'GRUB_SAVEDEFAULT=true' >> /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
-# Atualizar initramfs (focado no kernel CachyOS instalado)
-CACHY_KVER=$(printf '%s\n' /lib/modules/*cachy* | sort -V | tail -1)
-CACHY_KVER=$(basename "$CACHY_KVER")
-if [ -n "$CACHY_KVER" ]; then
-    echo "--- Gerando initramfs para o kernel $CACHY_KVER ---"
-    dracut -f --kver "$CACHY_KVER"
-else
-    dracut -f
-fi
+# Refresh do Initramfs
+dracut -f
 
-echo "Concluido! Reinicie o sistema."
+echo ""
+echo "=== Instalação Concluída! Reinicie com: sudo reboot ==="
