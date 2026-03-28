@@ -70,8 +70,8 @@ dnf install -y --allowerasing mesa-dri-drivers mesa-vulkan-drivers ffmpeg --skip
 dnf install -y elisa-player kalk koko marknote merkuro okular plasma-firewall skanpage kdepim-runtime google-chrome-stable ayugram-desktop antigravity curl fastfetch fzf git unrar unzip switcheroo-control libva-utils fwupd podman-docker
 
 # Instalação de fontes Microsoft (Core Fonts)
-dnf install -y cabextract mkfontscale xset
-dnf install -y https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
+dnf install -y cabextract mkfontscale xset xorg-x11-font-utils
+rpm -ivh --nodigest --nofiledigest https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
 
 # Suíte de Produtividade (LibreOffice)
 dnf group install -y libreoffice --skip-unavailable
