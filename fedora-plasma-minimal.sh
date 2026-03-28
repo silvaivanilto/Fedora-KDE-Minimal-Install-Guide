@@ -5,7 +5,15 @@ set -euo pipefail
 trap 'echo "Erro na linha $LINENO em: $BASH_COMMAND"; exit 1' ERR
 [[ $EUID -ne 0 ]] && echo "Execute com: sudo $0" && exit 1
 
+# Inicialização do Log Automático
+LOG_FILE="fedora-install-$(date +%Y%m%d-%H%M%S).txt"
+exec > >(tee -i "$LOG_FILE") 2>&1
+
+
+
 echo "=== Instalação do KDE Plasma Minimal — Fedora ==="
+echo "Logs gravados automaticamente em: $LOG_FILE"
+
 
 # ------------------------------------------------------------------------------
 # [1/5] Inicialização: Fontes de Software e Repositórios
@@ -71,7 +79,7 @@ dnf install -y elisa-player kalk koko marknote merkuro okular plasma-firewall sk
 
 # Instalação de fontes Microsoft (Core Fonts)
 dnf install -y cabextract mkfontscale xset xorg-x11-font-utils
-rpm -ivh --nodigest --nofiledigest https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
+rpm -ivh --replacepkgs --nodigest --nofiledigest https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
 
 # Suíte de Produtividade (LibreOffice)
 dnf group install -y libreoffice --skip-unavailable
@@ -147,5 +155,16 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 # Refresh do Initramfs
 dracut -f
 
+echo "=== Instalação Concluída! ==="
+
+# Finalização: Informa sobre o log, ajusta permissões e encerra
 echo ""
-echo "=== Instalação Concluída! Reinicie com: sudo reboot ==="
+chown "${SUDO_USER:-$USER}:${SUDO_USER:-$USER}" "$LOG_FILE"
+echo "O log completo da instalação foi salvo em: $LOG_FILE"
+
+
+
+echo "--------------------------------------------------------"
+echo "Sistema pronto! Reinicie agora com: sudo reboot"
+echo "--------------------------------------------------------"
+
