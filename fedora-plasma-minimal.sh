@@ -9,8 +9,6 @@ trap 'echo "Erro na linha $LINENO em: $BASH_COMMAND"; exit 1' ERR
 LOG_FILE="fedora-install-$(date +%Y%m%d-%H%M%S).txt"
 exec > >(tee -i "$LOG_FILE") 2>&1
 
-
-
 echo "=== Instalação do KDE Plasma Minimal — Fedora ==="
 echo "Logs gravados automaticamente em: $LOG_FILE"
 
@@ -31,8 +29,13 @@ dnf config-manager setopt fedora-nvidia.priority=90 fedora-multimedia.priority=9
 dnf copr enable -y bieszczaders/kernel-cachyos
 dnf copr enable -y bieszczaders/kernel-cachyos-addons
 
+# KDE Desktop Beta (COPR)
+dnf copr enable -y @kdesig/kde-beta
+
 # Repositórios RPM Fusion (Free e Nonfree)
-dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+dnf install -y \
+    https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+    https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
 # Repositório Antigravity
 cat > /etc/yum.repos.d/antigravity.repo << 'EOF'
@@ -56,12 +59,17 @@ dnf makecache --refresh
 dnf upgrade -y
 
 
+# ------------------------------------------------------------------------------
 # [3/5] Instalação: Ambiente Desktop, Kernel e Drivers Híbridos
 # ------------------------------------------------------------------------------
 echo "[3/5] Instalando ambiente desktop, kernel e drivers..."
 
 # Configuração de pacotes excluídos para um KDE Minimal
-KDE_EXCLUDE=("abrt*" "audiocd-kio" "firewall-config" "intel*" "kdebugsettings" "khelpcenter" "kdeplasma-addons" "plasma-drkonqi" "plasma-thunderbolt" "plasma-welcome")
+KDE_EXCLUDE=(
+    "abrt*" "audiocd-kio" "firewall-config" "intel*" 
+    "kdebugsettings" "khelpcenter" "kdeplasma-addons" 
+    "plasma-drkonqi" "plasma-thunderbolt" "plasma-welcome"
+)
 
 # Instalação do grupo KDE com exclusões
 dnf group install -y kde-desktop $(printf -- '--exclude=%s ' "${KDE_EXCLUDE[@]}") --skip-unavailable
@@ -70,12 +78,17 @@ dnf group install -y kde-desktop $(printf -- '--exclude=%s ' "${KDE_EXCLUDE[@]}"
 dnf install -y kernel-cachyos kernel-cachyos-devel-matched scx-scheds scx-tools ananicy-cpp
 
 # Drivers de Vídeo e Firmwares (Híbrido AMD + NVIDIA)
-dnf install -y --allowerasing nvidia-driver nvidia-gpu-firmware nvidia-settings nvidia-vaapi-driver amd-gpu-firmware --skip-unavailable
+dnf install -y --allowerasing nvidia-driver nvidia-gpu-firmware nvidia-settings libva-nvidia-driver amd-gpu-firmware --skip-unavailable
 
 dnf install -y --allowerasing mesa-dri-drivers mesa-vulkan-drivers ffmpeg --skip-unavailable
 
 # Aplicativos Core e Utilitários
-dnf install -y elisa-player kalk koko marknote merkuro okular plasma-firewall skanpage kdepim-runtime google-chrome-stable ayugram-desktop antigravity curl fastfetch fzf git unrar unzip switcheroo-control libva-utils fwupd podman-docker
+dnf install -y \
+    elisa-player haruna kalk koko marknote merkuro okular \
+    plasma-firewall skanpage kdepim-runtime \
+    google-chrome-stable ayugram-desktop antigravity \
+    curl fastfetch fzf git unrar unzip \
+    switcheroo-control libva-utils fwupd podman-docker
 
 # Instalação de fontes Microsoft (Core Fonts)
 dnf install -y cabextract mkfontscale xset xorg-x11-font-utils
@@ -146,8 +159,10 @@ grubby --update-kernel=ALL --args="rd.driver.blacklist=nouveau,nova_core modprob
 
 # Remoção de kernels antigos (Mantém apenas o CachyOS)
 echo "Limpando kernels antigos do Fedora..."
-dnf remove -y kernel kernel-core kernel-modules kernel-devel --exclude="*cachyos*"
+dnf remove -y kernel kernel-core kernel-modules kernel-devel --exclude="*cachyos*" || true
 
+# Configuração da Memória de Boot do GRUB (SAVEDEFAULT)
+echo "Salvando o último kernel inicializado como padrão no GRUB..."
 sed -i 's/GRUB_DEFAULT=.*/GRUB_DEFAULT=saved/' /etc/default/grub
 grep -q 'GRUB_SAVEDEFAULT' /etc/default/grub || echo 'GRUB_SAVEDEFAULT=true' >> /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
@@ -161,8 +176,6 @@ echo "=== Instalação Concluída! ==="
 echo ""
 chown "${SUDO_USER:-$USER}:${SUDO_USER:-$USER}" "$LOG_FILE"
 echo "O log completo da instalação foi salvo em: $LOG_FILE"
-
-
 
 echo "--------------------------------------------------------"
 echo "Sistema pronto! Reinicie agora com: sudo reboot"
