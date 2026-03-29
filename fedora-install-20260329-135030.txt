@@ -48,3 +48,17 @@ Por favor não registre relatórios de bugs sobre esses pacotes no
 Bugzilla do Fedora. Em caso de problemas, entre em contato com o
 proprietário deste repositório.
 Atualizando e carregando repositórios:
+ Copr repo for kernel-cachyos-addons ow 100% | 485.0   B/s |   1.5 KiB |  00m03s
+ Copr repo for kernel-cachyos owned by  100% | 486.0   B/s |   1.5 KiB |  00m03s
+ Copr repo for kde-beta owned by @kdesi 100% | 488.0   B/s |   1.5 KiB |  00m03s
+ negativo17 - Multimedia                100% |   1.3 KiB/s |   4.3 KiB |  00m03s
+ negativo17 - Nvidia                    100% |   1.3 KiB/s |   4.2 KiB |  00m03s
+Repositórios carregados.
+ https://mirrors.rpmfusion.org/free/fed 100% |  12.3 KiB/s |  11.4 KiB |  00m01s
+ https://mirrors.rpmfusion.org/nonfree/ 100% |   3.0 KiB/s |  11.4 KiB |  00m04s
+O pacote "rpmfusion-free-release-44-0.3.noarch" já está instalado.
+O pacote "rpmfusion-nonfree-release-44-0.3.noarch" já está instalado.
+
+Nada para fazer.
+[2/5] Atualizando os pacotes do sistema...
+Atualizando e carregando repositórios:
