@@ -10,3 +10,41 @@ O pacote "pciutils-3.14.0-3.fc44.x86_64" já está instalado.
 
 Nada para fazer.
  https://negativo17.org/repos/fedora-nv 100% |   1.4 KiB/s | 876.0   B |  00m01s
+ https://negativo17.org/repos/fedora-mu 100% |   1.5 KiB/s | 912.0   B |  00m01s
+ https://copr.fedorainfracloud.org/api_ 100% |   1.0 KiB/s | 509.0   B |  00m00s
+Habilitando um repositório Copr. Observe que este repositório não faz
+parte da distribuição principal e a qualidade pode variar.
+
+O Projeto Fedora não exerce nenhum poder sobre o conteúdo deste
+repositório além das regras descritas no FAQ do Copr em
+<https://docs.pagure.org/copr.copr/user_documentation.html#what-i-can-build-in-copr>,
+e os pacotes não são mantidos em nenhum nível de qualidade ou segurança.
+
+Por favor não registre relatórios de bugs sobre esses pacotes no
+Bugzilla do Fedora. Em caso de problemas, entre em contato com o
+proprietário deste repositório.
+ https://copr.fedorainfracloud.org/api_ 100% |   1.1 KiB/s | 423.0   B |  00m00s
+Habilitando um repositório Copr. Observe que este repositório não faz
+parte da distribuição principal e a qualidade pode variar.
+
+O Projeto Fedora não exerce nenhum poder sobre o conteúdo deste
+repositório além das regras descritas no FAQ do Copr em
+<https://docs.pagure.org/copr.copr/user_documentation.html#what-i-can-build-in-copr>,
+e os pacotes não são mantidos em nenhum nível de qualidade ou segurança.
+
+Por favor não registre relatórios de bugs sobre esses pacotes no
+Bugzilla do Fedora. Em caso de problemas, entre em contato com o
+proprietário deste repositório.
+ https://copr.fedorainfracloud.org/api_ 100% | 630.0   B/s | 310.0   B |  00m00s
+Habilitando um repositório Copr. Observe que este repositório não faz
+parte da distribuição principal e a qualidade pode variar.
+
+O Projeto Fedora não exerce nenhum poder sobre o conteúdo deste
+repositório além das regras descritas no FAQ do Copr em
+<https://docs.pagure.org/copr.copr/user_documentation.html#what-i-can-build-in-copr>,
+e os pacotes não são mantidos em nenhum nível de qualidade ou segurança.
+
+Por favor não registre relatórios de bugs sobre esses pacotes no
+Bugzilla do Fedora. Em caso de problemas, entre em contato com o
+proprietário deste repositório.
+Atualizando e carregando repositórios:
