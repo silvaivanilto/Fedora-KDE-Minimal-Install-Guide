@@ -18,6 +18,9 @@ echo "Logs gravados automaticamente em: $LOG_FILE"
 # ------------------------------------------------------------------------------
 echo "[1/5] Preparando fontes de software e repositórios..."
 
+# Otimização de Velocidade Global do Motor DNF5
+dnf config-manager setopt max_parallel_downloads=10 fastestmirror=True
+
 dnf install -y dnf-plugins-core fedora-workstation-repositories grubby pciutils
 
 # Repositórios Negativo17 (Drivers e Multimídia)
@@ -66,9 +69,10 @@ echo "[3/5] Instalando ambiente desktop, kernel e drivers..."
 
 # Configuração de pacotes excluídos para um KDE Minimal
 KDE_EXCLUDE=(
-    "abrt*" "audiocd-kio" "firewall-config" "intel*" 
-    "kdebugsettings" "khelpcenter" "kdeplasma-addons" 
-    "plasma-drkonqi" "plasma-thunderbolt" "plasma-welcome"
+    "abrt*" "firewall-config" "intel*"
+    "audiocd-kio" "kdebugsettings" "khelpcenter" 
+    "kdeplasma-addons" "plasma-drkonqi" "plasma-thunderbolt" 
+    "plasma-welcome" "plasma-workspace-wallpapers"
 )
 
 # Instalação do grupo KDE com exclusões
@@ -88,7 +92,11 @@ dnf install -y \
     plasma-firewall skanpage kdepim-runtime \
     google-chrome-stable ayugram-desktop antigravity \
     curl fastfetch fzf git unrar unzip \
-    switcheroo-control libva-utils fwupd podman-docker
+    switcheroo-control libva-utils fwupd podman-docker podman-compose flatpak
+
+# Tela de Boot Animada (Plymouth Spinner Padrão)
+dnf install -y plymouth plymouth-system-theme plymouth-theme-spinner
+plymouth-set-default-theme spinner
 
 # Instalação de fontes Microsoft (Core Fonts)
 dnf install -y cabextract mkfontscale xset xorg-x11-font-utils
@@ -128,8 +136,14 @@ EOF
 # ------------------------------------------------------------------------------
 echo "[5/5] Finalizando serviços e configuração de boot..."
 
+# Sincronização de Relógio de Hardware (UTC) para consistência no Dual-Boot
+timedatectl set-local-rtc 0
+
 # Ativa o login da interface gráfica KDE
 systemctl enable plasmalogin.service
+
+# Habilita o canal de Contêineres (Socket) para IDEs como VS Code Globalmente
+systemctl --global enable podman.socket
 
 # Loader de schedulers BPF (CachyOS)
 systemctl enable scx_loader.service
@@ -151,11 +165,10 @@ set -e
 grubby --set-default=/boot/$(ls /boot | grep vmlinuz.*cachy | sort -V | tail -1)
 EOF
 
-chown root:root /etc/kernel/postinst.d/99-default
 chmod u+rx /etc/kernel/postinst.d/99-default
 
-# Atualização de Parâmetros do Kernel e GRUB
-grubby --update-kernel=ALL --args="rd.driver.blacklist=nouveau,nova_core modprobe.blacklist=nouveau,nova_core nvidia-drm.modeset=1"
+# Atualização de Parâmetros do Kernel e GRUB (Habilita Boot Silencioso e Plymouth)
+grubby --update-kernel=ALL --args="rhgb quiet vt.global_cursor_default=0 rd.driver.blacklist=nouveau,nova_core modprobe.blacklist=nouveau,nova_core nvidia-drm.modeset=1"
 
 # Remoção de kernels antigos (Mantém apenas o CachyOS)
 echo "Limpando kernels antigos do Fedora..."
@@ -167,8 +180,9 @@ sed -i 's/GRUB_DEFAULT=.*/GRUB_DEFAULT=saved/' /etc/default/grub
 grep -q 'GRUB_SAVEDEFAULT' /etc/default/grub || echo 'GRUB_SAVEDEFAULT=true' >> /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
-# Refresh do Initramfs
-dracut -f
+# Refresh do Initramfs (Compilando o Plymouth no Boot do CachyOS)
+CACHY_KVER=$(ls /lib/modules | grep cachy | sort -V | tail -1)
+dracut -f --kver "$CACHY_KVER"
 
 echo "=== Instalação Concluída! ==="
 

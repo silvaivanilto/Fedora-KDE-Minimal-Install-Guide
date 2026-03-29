@@ -1,0 +1,12 @@
+=== Instalação do KDE Plasma Minimal — Fedora ===
+Logs gravados automaticamente em: fedora-install-20260329-135030.txt
+[1/5] Preparando fontes de software e repositórios...
+Atualizando e carregando repositórios:
+Repositórios carregados.
+O pacote "dnf-plugins-core-4.10.1-9.fc44.noarch" já está instalado.
+O pacote "fedora-workstation-repositories-38-9.fc44.x86_64" já está instalado.
+O pacote "grubby-8.40-88.fc44.x86_64" já está instalado.
+O pacote "pciutils-3.14.0-3.fc44.x86_64" já está instalado.
+
+Nada para fazer.
+ https://negativo17.org/repos/fedora-nv 100% |   1.4 KiB/s | 876.0   B |  00m01s
